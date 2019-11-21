@@ -1,94 +1,107 @@
 /*
-Mohamed Mohamed
-821344570
-CS 310-2
-Software Decoder 2
-10/21/19
+ Mohamed Mohamed
+ CS 310-2
+ 821344570
+ 11/19/19
  */
 
 
 import java.io.FileInputStream;
-import java.util.*;
-import java.io.*;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Scanner;
+
 public class Driver {
 
-    public static void main(String[] args) {
-        FileInputStream patterns = null;
-        FileInputStream unsignedValues = null;
-        QueueClass queueClass1 = new QueueClass(); // unsigned values
-        QueueClass queueClass2 = new QueueClass(); // patterns queue
+    public static void main (String[] args) {
 
-        System.out.println("You provided " + args.length + " arguments");
 
-        if (args.length < 2) {
-            System.err.println("This program needs two arguments, try again");
-            return;
-        }
+
+
+        Graph graph = new Graph();
 
         try {
-            // as of right now, I'll just have arguments, but I'll use test files later when my code
-            // is complete
-            patterns = new FileInputStream(args[0]); //args[0] is the patterns file, check for test
-            unsignedValues = new FileInputStream(args[1]);// cases, same with args[1] ,
-            FileWriter outFile = new FileWriter("return.txt");
+            if (args.length != 1) {
+                System.err.println("This program only needs one argument, try again");
+            }
 
+            FileInputStream inputFile = new FileInputStream(args[0]);
+            FileWriter outFile = new FileWriter ("return.txt");
             PrintWriter pw = new PrintWriter(outFile);
 
-            Scanner scan = new Scanner(patterns); // scanner for the patterns & weapons codes
-            Scanner scnr = new Scanner(unsignedValues); // scanner for the unsigned values
 
+            Scanner scan = new Scanner(inputFile);
 
-            while (scnr.hasNextLine()) { // checks the scanner for the unsigned values
-
-                String line = scnr.nextLine();
-                String[] unsignedArray = line.split(",");
-                // patterns are for the decoder
-
-                for (int i = 0; i < unsignedArray.length; i++) {
-                    // unsigned values in the queue
-                    queueClass1.loadValue(Integer.parseInt(unsignedArray[i]));
-                    //
-
-                }
-
-            }
 
             while (scan.hasNextLine()) {
                 String line = scan.nextLine();
-                String[] pattern = line.split(",");
+                String[] vertex = line.split(",");
 
+                if (vertex.length == 3) {
+                    // if there are three values after the split
+                    if (!graph.contains(vertex[0]) ) {
+                        graph.addVertex(vertex[0]);
+                    }
+                    if (!graph.contains(vertex[1]) ) {
+                        graph.addVertex(vertex[1]);
+                    }
 
-                for (int i = 0; i < pattern.length; i++) {
-                    // patterns & weapon codes in the queue
-                    queueClass2.loadValue(Integer.parseInt(pattern[i]));
+                    graph.addEdge(vertex[0],vertex[1],Integer.parseInt(vertex[2]));
                 }
 
+                if (vertex.length == 1) {
+                    // if there's only one input
+                    if (graph.contains(vertex[0])) {
+                        continue;
+                    } else {
+                        graph.addVertex(vertex[0]);
+                    }
+
+                }
             }
 
-            QueueClass returnQueue = decoderMethod(queueClass1,queueClass2);
-
-            int returnQueueSize = returnQueue.size();
-            // size often changes when you do the nextValue within the array, so
-            // returnQueueSize stays the same
 
             try {
-                for (int i = 0; i < returnQueueSize; i++) {
-                    // write the values into the return.txt file
-                    Integer patternCodeValue = returnQueue.nextValue();
-                    pw.println((patternCodeValue));
-                    pw.flush();
+                pw.println("Number of vertices in the graph: "  + graph.numberOfVertices());
+                pw.println("The edge with the heaviest weight is: " + graph.heaviestEdge());
+                pw.println("The vertices with the self edges are: ");
 
+                if (graph.selfEdges.size() == 0) {
+                    pw.println("Sorry, there are no vertices with self edges");
+                } else {
+                    for (int i = 0; i <  graph.selfEdges.size(); i++) {
+                        pw.println(graph.selfEdges.get(i));
+                    }
                 }
+
+                pw.println("The vertices with zero outbound edges are:");
+
+                if (graph.zeroOutboundEdges().size() == 0) {
+                    pw.println("Sorry, there are no edges that meet this requirement");
+                } else {
+                    for (int i = 0; i < graph.zeroOutboundEdges().size(); i++) {
+                        pw.println(graph.zeroOutboundEdges().get(i));
+                    }
+                }
+
+
+                pw.println("The vertices with zero inbound edges are: ");
+                if (graph.zeroInboundEdges().size() == 0) {
+                    pw.println("Sorry, there are no edges that meet this requirement");
+                } else {
+                    for (int i = 0; i < graph.zeroInboundEdges().size(); i++) {
+                        pw.println(graph.zeroInboundEdges().get(i));
+                    }
+                }
+
+            } finally {
+                pw.flush();
             }
-            finally {
-
-                    pw.close();
-
-            }
 
 
-            scan.close();
-            scnr.close();
+
 
 
         } catch (FileNotFoundException e) {
@@ -98,178 +111,8 @@ public class Driver {
             e.printStackTrace();
         }
 
-    }
 
-    public static QueueClass decoderMethod(QueueClass unsignedVals, QueueClass patterns) {
-        // I'm assuming that the unsigned values are coming in like
-        // the simple input stream that Healey gave in his earlier example
-        //Also, unsignedVals is unsigned values, patterns is weapon codes and patterns
-        ArrayList<Integer> returnList = new ArrayList<>();
-
-        // copies the weapons patterns values to another queue
-        QueueClass patternsCopy = patterns;
-
-        // returnQueue stores the confirmed values
-        QueueClass returnQueue = new QueueClass();
-
-
-        // this 2D array stores the pattern array
-        int [][] patternArray = new int[patterns.size()/7][7];
-
-        // copies the values stored in the patternsCopy queue into the 2D array
-        for (int i = 0; i < patternArray.length; i++) {
-            for (int j = 0; j < patternArray[i].length; j++) {
-                patternArray[i][j] = patternsCopy.nextValue();
-            }
-        }
-
-        int unsignedValuesContainedInTheQueue = unsignedVals.size() / 6;
-        // this value checks to see how many times the loop can go
-
-
-        for (int i = 0; i < unsignedValuesContainedInTheQueue; i++) {
-
-            int originalUnsignedValsQueueSize = unsignedVals.size();
-            // I keep the original queue size due to the size value being changed
-
-            for (int j = 0; j < originalUnsignedValsQueueSize; j++) {
-
-                // what this loop does is that it removes unsigned values that
-                // doesn't match the pattern. Since every potential pattern
-                // starts as " 0, 20 " this will check to see if the difference
-                // of the two values meet those requirements
-
-                int[] peekValues = unsignedVals.peek(7);
-                // peekValues are declared here, taking advantage of scope
-
-                if (peekValues[1] - peekValues[0] != 20) {
-                    // if it doesn't meet the requirements above, then the value
-                    // is removed from the queue and the values are normalized
-                    unsignedVals.nextValue();
-                    unsignedVals.normalize();
-                } else {
-                    // if a word is at least found, the loop is stopped
-                    break;
-                }
-            }
-
-            int noise = 0;
-            unsignedVals.normalize();
-            int[] peekValues = unsignedVals.peek(7);
-
-
-            for (int j = 0; j < patternArray.length; j++) {
-                // iterate through the peekValues to see if conditions are met
-                if (j >= patternArray.length) {
-                    noise = 0;
-                    // if j is bigger than the pattern array length, then stop the loop
-                    // this stops the ArrayIndexOutOfBoundsException from occurring
-                    break;
-                }
-                if (peekValues[1] - peekValues[0] == 0) {
-                    // fail-safe because peek will automatically get zeros after the values
-                    // are done, so this is used to break if the size is empty
-                    break;
-                }
-                noise = 0;
-                //noise is reset to scan for the next value
-                for (int k = 0; k < 6; k++) {
-
-                    if (noise >= 2) {
-                        // if there are two noise values, it isn't a valid MILES pattern
-                        break;
-                    } else if (noise == 1) {
-                        // if there's one noise value, it can still be a noise value, so skip
-                        // the value that's a noise value and scan the rest of the peeked values
-                        if (peekValues[k + 1] != patternArray[j][k]) {
-                            noise++;
-                            unsignedVals.normalize();
-                            continue;
-                        }
-                    }
-                    else {
-                        // if there are no noise values and the unsigned values match, then we
-                        // have a MILES pattern!
-                        if (peekValues[k] != patternArray[j][k]) {
-                            if (peekValues[k+1] != patternArray[j][k]) {
-                                // checks to see if there is a another noise value next to a noise value
-                                noise++;
-                            }
-                            noise++;
-                            continue;
-                        }
-                    }
-
-                }
-
-
-
-
-                if (noise == 1 || noise == 0) {
-                    // if there is a valid MILES pattern within the unsigned values, add the respective
-                    // MILES pattern number to the returnList that contains the weapon code
-                    returnList.add(patternArray[j][6]);
-                    System.out.println("weapon code pattern: " + patternArray[j][6]);
-                    break;
-                }
-
-            }
-             if (noise == 2) {
-                 // if noise is equal to two, then pretty much erase those values from the queue
-                 // and try again
-                unsignedVals.nextValue();
-                unsignedVals.normalize();
-
-            }
-            else if (noise == 1) {
-                // if noise is equal to one, pretty much do the same thing and erase those values
-                // from the queue
-                for (int j =0; j < 7; j++) {
-                    if (unsignedVals.size() == 0) {
-                        // if the queue is empty, just stop this process
-                        break;
-                    }
-                    unsignedVals.nextValue();
-                }
-                if (unsignedVals.size() > 0) {
-                    // if the array isn't empty, normalize the values and try again
-                    unsignedVals.normalize();
-
-                }
-            }
-            else if (noise == 0){
-                 if (peekValues[1] - peekValues[0] == 0) {
-                     // if noise is equal to zero, just make sure that the array isn't empty
-                     break;
-                 }
-                for (int j =0; j < 6; j++) {
-                    if (unsignedVals.size() == 0) {
-                        // if the array is empty, don't erase the values from the queue and stop the process
-                        break;
-                    }
-                    unsignedVals.nextValue();
-                }
-                if (unsignedVals.size() > 0) {
-                    // if the array isn't empty, normalize the values and try again
-                    unsignedVals.normalize();
-                }
-            }
-        }
-
-        for (int i = 0; i < returnList.size(); i++) {
-            // load the values from returnList to the queue we want to return
-            returnQueue.loadValue(returnList.get(i));
-        }
-
-        return returnQueue;
 
     }
 
 }
-
-
-
-
-
-
-
