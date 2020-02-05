@@ -173,5 +173,45 @@ public class Graph {
         }
         return zeroInboundEdges;
     }
+ public List<String> shortestPath(String start, String destination) {
+        if (!contains(start) || !contains(destination)) {
+            System.err.print("The start or the end doesn't exist");
+            return null;
+        }
+
+        Map<String, Integer> dist = new HashMap<>();
+        Map<String, String> prev = new HashMap<>();
+        List<String> q = new LinkedList<>();
+        List<String> toReturn = new LinkedList<>();
+
+        dist.put(start, 0);
+        prev.put(start, null);
+        q.add(start);
+        toReturn.add(start);
+
+        if (graph.get(start).containsKey(destination)) {
+            toReturn.add(destination);
+            return toReturn;
+        }
+
+
+        while (!q.isEmpty()) {
+            String u = ((LinkedList<String>) q).poll();
+            if (u.equals(destination)) {
+                return toReturn;
+            }
+            for (String neighbor : graph.keySet(u)) {
+                if (!dist.containsKey(neighbor)) {
+                    dist.put(neighbor, dist.get(u) + 1);
+                    prev.put(neighbor, u);
+                    q.add(neighbor);
+                    toReturn.add(neighbor);
+                }
+            }
+        }
+        return toReturn;
+    }
+ 
+ 
 
 }
